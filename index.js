@@ -1,12 +1,17 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const { MongoClient } = require('mongodb');
+const cors = require('cors');
 
 const app = express();
 const port = 3000;
 
 // Configurar middleware para analizar el cuerpo de las solicitudes HTTP
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+
+// Configurar CORS para permitir solicitudes desde cualquier origen
+app.use(cors());
 
 // URL de conexión a tu base de datos MongoDB Atlas
 const mongoUrl = "mongodb+srv://pixon:Filo1234@cluster0.sw8tbcs.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
@@ -38,6 +43,17 @@ app.post('/app/application-0-laqjr/endpoint/SensorData', async (req, res) => {
     console.error("Error al conectar a MongoDB Atlas:", error);
     res.status(500).send("Error al conectar a la base de datos");
   }
+});
+
+// Manejar errores 404 para rutas no encontradas
+app.use((req, res, next) => {
+  res.status(404).send("Ruta no encontrada");
+});
+
+// Manejar errores 500
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send('Error del servidor');
 });
 
 // Iniciar el servidor
