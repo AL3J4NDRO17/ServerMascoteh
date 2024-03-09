@@ -61,7 +61,7 @@ app.post('/app/application-0-laqjr/endpoint/SensorData', async (req, res) => {
 });
 
 
-app.post('/getUser', async (req, res) => {
+app.post('/GetUser', async (req, res) => {
   const data = req.body;
 
   try {
