@@ -62,8 +62,10 @@ app.post('/app/application-0-laqjr/endpoint/SensorData', async (req, res) => {
 
 
 app.post('/GetUser', async (req, res) => {
-  const data = req.body;
-
+  console.log("sientre");
+  const { username , password } = req.body;
+  console.log(username);
+  console.log(password);
   try {
     // Conectar a la base de datos MongoDB Atlas
     const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
@@ -73,15 +75,17 @@ app.post('/GetUser', async (req, res) => {
     const db = client.db("SensorData");
     const collection = db.collection("Users");
 
-    // Verificar si el email ya existe en la colección
-    const existingUser = await collection.findOne({ user: data.user });
+    // Verificar si el usuario existe en la colección
+    const existingUser = await collection.findOne({ user: username, pass: password });
     if (existingUser) {
       console.log("Usuario Encontrado:", existingUser);
       // Respondemos con el usuario encontrado
       res.status(200).json(existingUser);
       return; // Terminar la ejecución de la función
     }
+
     // Si no se encuentra ningún usuario, respondemos con un mensaje indicando que no existe
+    console.log("Usuario no encontrado");
     res.status(404).send("Usuario no encontrado");
 
   } catch (error) {
@@ -181,4 +185,5 @@ app.use((err, req, res, next) => {
 app.listen(port, () => {
   console.log(`Servidor Node.js escuchando en http://localhost:${port}`);
 });
+
 
