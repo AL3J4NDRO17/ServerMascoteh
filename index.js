@@ -1,421 +1,288 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const { MongoClient } = require('mongodb');
-const cors = require('cors');
-const mqtt = require('mqtt'); // Importar el módulo MQTT
+import React from 'react';
+import '../styles/registro.css';
+import Axios from 'axios';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import swal from 'sweetalert2';
+import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
+import md5 from 'md5';
+
+const noti = withReactContent(Swal);
 
 
-const app = express();
-const port = 3000;
+export const Registro = () => {
 
-// Configurar middleware para analizar el cuerpo de las solicitudes HTTP
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
-
-// Configurar CORS para permitir solicitudes desde cualquier origen
-app.use(cors());
-
-// URL de conexión a tu base de datos MongoDB Atlas
-const mongoUrl = "mongodb+srv://pixon:Filo1234@cluster0.sw8tbcs.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
-
-const mqttClient = mqtt.connect('mqtt://broker.emqx.io');
-// Ruta para recibir datos desde la ESP32
-const { ObjectId } = require('mongodb');
-
-app.post('/app/application-0-laqjr/endpoint/SensorData', async (req, res) => {
-  const data = req.body;
-  console.log(data);
-  try {
-    // Conectar a la base de datos MongoDB Atlas
-    const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
-    console.log("Conexión exitosa a MongoDB Atlas");
-
-    // Obtener una referencia a la base de datos y la colección
-    const db = client.db("SensorData");
-    const collection = db.collection("DeviceState");
-
-    // Crear un objeto ObjectId a partir del ID proporcionado
-    const objectId = new ObjectId("65eab39b61ff359e597d8a39");
-
-    // Buscar el documento por su _id
-    const existingDocument = await collection.findOne({ _id: objectId });
-    if (!existingDocument) {
-      console.error("Documento no encontrado en la base de datos");
-      return res.status(404).send("Documento no encontrado en la base de datos");
-    }
-
-    // Actualizar el documento
-    await collection.updateOne({ _id: objectId }, { $set: data });
-    console.log("Documento actualizado en la base de datos");
-
-    // Cerrar la conexión
-    client.close();
-    console.log("Conexión cerrada");
-
-    // Responder con un mensaje de confirmación
-    res.send("Datos recibidos y guardados en la base de datos");
-  } catch (error) {
-    console.error("Error al conectar a MongoDB Atlas:", error);
-    res.status(500).send("Error al conectar a la base de datos");
-  }
-});
-
-/* USUARIOS.
-.
-.
-.
-. */
-app.post('/GetUser', async (req, res) => {
-  console.log("sientre");
-  const { username, password } = req.body;
-  console.log(username);
-  console.log(password);
-  try {
-    // Conectar a la base de datos MongoDB Atlas
-    const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
-    console.log("Conexión exitosa a MongoDB Atlas");
-
-    // Obtener una referencia a la base de datos y la colección
-    const db = client.db("SensorData");
-    const collection = db.collection("Users");
-
-    // Verificar si el usuario existe en la colección
-    const existingUser = await collection.findOne({ user: username, pass: password });
-    if (existingUser) {
-      console.log("Usuario Encontrado:", existingUser);
-      // Respondemos con el usuario encontrado
-      res.status(200).json(existingUser);
-      return; // Terminar la ejecución de la función
-    }
-
-    // Si no se encuentra ningún usuario, respondemos con un mensaje indicando que no existe
-    console.log("Usuario no encontrado");
-    res.status(404).send("Usuario no encontrado");
-
-  } catch (error) {
-    console.error("Error al conectar a MongoDB Atlas:", error);
-    res.status(500).send("Error al conectar a la base de datos");
-  }
-});
-app.post('/Insert', async (req, res) => {
-  const data = req.body;
-
-  try {
-    // Conectar a la base de datos MongoDB Atlas
-    const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
-    console.log("Conexión exitosa a MongoDB Atlas");
-
-    // Obtener una referencia a la base de datos y la colección
-    const db = client.db("SensorData");
-    const collection = db.collection("Users");
-
-    // Verificar si el email ya existe en la colección
-    const existingUser = await collection.findOne({ user: data.user });
-    if (existingUser) {
-      console.log("El email ya existe en la base de datos");
-      // Responder con un mensaje de error
-      res.status(400).send("El email ya existe en la base de datos");
-      return; // Terminar la ejecución de la función
-    }
-
-    // Insertar los datos en la colección
-    await collection.insertOne({
-      ...data,
-      Dispositivo: {
-          // Aquí van los datos del dispositivo embebido
-          // Por ejemplo:
-          ID: null,
-          // Otros campos del dispositivo...
-      },
-      permisos: "usuario"
-  });
-    console.log("Datos insertados en la base de datos");
-
-    // Cerrar la conexión
-    client.close();
-    console.log("Conexión cerrada");
-
-    // Responder a la ESP32 con un mensaje de confirmación
-    res.send("Datos recibidos y guardados en la base de datos");
-  } catch (error) {
-    console.error("Error al conectar a MongoDB Atlas:", error);
-    res.status(500).send("Error al conectar a la base de datos");
-  }
-});
-app.get('/usuarios', async (req, res) => {
-  console.log("entrepareverusaurios");
-  try {
-    // Conectar a la base de datos MongoDB Atlas
-    const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
-    console.log("Conexión exitosa a MongoDB Atlas");
-
-    // Obtener una referencia a la base de datos y la colección
-    const db = client.db("SensorData");
-    const collection = db.collection("Users");
-
-    // Realizar la consulta a la colección de usuarios
-    const usuarios = await collection.find({}).toArray();
-
-    // Cerrar la conexión
-    client.close();
-    console.log("Conexión cerrada");
-
-    // Responder con los resultados de la consulta
-    res.json(usuarios);
-  } catch (error) {
-    console.error("Error al conectar a MongoDB Atlas:", error);
-    res.status(500).send("Error al conectar a la base de datos");
-  }
-});
-app.delete('/delete/:id', async (req, res) => {
-  const userId = req.params.id; // Obtener el ID del usuario a eliminar desde los parámetros de la solicitud
-  console.log(userId);
-  try {
-    // Conectar a la base de datos MongoDB Atlas
-    const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
-    console.log("Conexión exitosa a MongoDB Atlas");
-
-    // Obtener una referencia a la base de datos y la colección
-    const db = client.db("SensorData");
-    const collection = db.collection("Users");
-
-    // Realizar la eliminación del usuario en la colección
-    const result = await collection.deleteOne({ _id: new ObjectId(userId) });  // Suponiendo que el ID del usuario sea único
-
-    // Verificar si se eliminó el usuario correctamente
-    if (result.deletedCount === 1) {
-      console.log("Usuario eliminado correctamente.");
-      res.status(200).send("Usuario eliminado correctamente.");
-    } else {
-      console.log("El usuario no pudo ser encontrado o eliminado.");
-      res.status(404).send("El usuario no pudo ser encontrado o eliminado.");
-    }
-
-    // Cerrar la conexión
-    client.close();
-    console.log("Conexión cerrada");
-  } catch (error) {
-    console.error("Error al conectar a MongoDB Atlas:", error);
-    res.status(500).send("Error al conectar a la base de datos");
-  }
-});
-
-app.put('/editar/:id', async (req, res) => {
-  const userId = req.params.id; // Obtener el ID del usuario a editar desde los parámetros de la solicitud
-  const userData = req.body; // Obtener los datos del usuario a editar desde el cuerpo de la solicitud
-  console.log(userId);
-  try {
-    // Conectar a la base de datos MongoDB Atlas
-    const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
-    console.log("Conexión exitosa a MongoDB Atlas");
-
-    // Obtener una referencia a la base de datos y la colección
-    const db = client.db("SensorData");
-    const collection = db.collection("Users");
-
-    // Realizar la actualización del usuario en la colección
-    const result = await collection.updateOne({ _id: new ObjectId(userId) }, { $set: userData });
-
-    // Verificar si se actualizó el usuario correctamente
-    if (result.modifiedCount === 1) {
-      console.log("Usuario actualizado correctamente.");
-      res.status(200).send("Usuario actualizado correctamente.");
-    } else {
-      console.log("El usuario no pudo ser encontrado o actualizado.");
-      res.status(404).send("El usuario no pudo ser encontrado o actualizado.");
-    }
-
-    // Cerrar la conexión
-    client.close();
-    console.log("Conexión cerrada");
-  } catch (error) {
-    console.error("Error al conectar a MongoDB Atlas:", error);
-    res.status(500).send("Error al conectar a la base de datos");
-  }
-});
-
-/* PRODUCTOS............
-.
-..
-.
-.
-.
- */
-app.get('/productos', async (req, res) => {
-  try {
-    const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
-    console.log("Conexión exitosa a MongoDB Atlas");
-
-    // Obtener una referencia a la base de datos y la colección
-    const db = client.db("SensorData");
-    const collection = db.collection("Products");
-
-    // Realizar la consulta a la colección de usuarios
-    const producto = await collection.find({}).toArray();
-
-    // Cerrar la conexión
-    client.close();
-    console.log("Conexión cerrada");
-
-    // Responder con los resultados de la consulta
-    res.json(producto);
-  } catch (error) {
-    console.error("Error al obtener productos:", error);
-    res.status(500).send("Error al obtener productos");
-  }
-});
-
-// Agregar un nuevo producto
-app.post('/InsertProduct', async (req, res) => {
-  
-  const data = req.body;
-  console.log(data);
-  try {
-    // Conectar a la base de datos MongoDB Atlas
-    const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
-    console.log("Conexión exitosa a MongoDB Atlas");
-
-    // Obtener una referencia a la base de datos y la colección
-    const db = client.db("SensorData");
-    const collection = db.collection("Products");
-
-    // Verificar si el email ya existe en la colección
-    // Insertar los datos en la colección
-    await collection.insertOne({...data}); // Establecer permisos de usuario automáticamente
-
-    console.log("Datos insertados en la base de datos");
-
-    // Cerrar la conexión
-    client.close();
-    console.log("Conexión cerrada");
-
-    // Responder a la ESP32 con un mensaje de confirmación
-    res.send("Datos recibidos y guardados en la base de datos");
-  } catch (error) {
-    console.error("Error al conectar a MongoDB Atlas:", error);
-    res.status(500).send("Error al conectar a la base de datos");
-  }
-});
-
-// Actualizar un producto existente
-app.put('/productosedit/:id', async (req, res) => {
-  const productId = req.params.id; // Obtener el ID del usuario a editar desde los parámetros de la solicitud
-  const productData = req.body; // Obtener los datos del usuario a editar desde el cuerpo de la solicitud
-  console.log(productId);
-  try {
-    // Conectar a la base de datos MongoDB Atlas
-    const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
-    console.log("Conexión exitosa a MongoDB Atlas");
-
-    // Obtener una referencia a la base de datos y la colección
-    const db = client.db("SensorData");
-    const collection = db.collection("Products");
-
-    // Realizar la actualización del usuario en la colección
-    const result = await collection.updateOne({ _id: new ObjectId(productId) }, { $set: productData });
-
-    // Verificar si se actualizó el usuario correctamente
-    if (result.modifiedCount === 1) {
-      console.log("Usuario actualizado correctamente.");
-      res.status(200).send("Usuario actualizado correctamente.");
-    } else {
-      console.log("El usuario no pudo ser encontrado o actualizado.");
-      res.status(404).send("El usuario no pudo ser encontrado o actualizado.");
-    }
-
-    // Cerrar la conexión
-    client.close();
-    console.log("Conexión cerrada");
-  } catch (error) {
-    console.error("Error al conectar a MongoDB Atlas:", error);
-    res.status(500).send("Error al conectar a la base de datos");
-  }
-});
-
-// Eliminar un producto
-app.delete('/productos/:id', async (req, res) => {
-  const productId = req.params.id; // Obtener el ID del usuario a eliminar desde los parámetros de la solicitud
-  console.log(productId);
-  try {
-    // Conectar a la base de datos MongoDB Atlas
-    const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
-    console.log("Conexión exitosa a MongoDB Atlas");
-
-    // Obtener una referencia a la base de datos y la colección
-    const db = client.db("SensorData");
-    const collection = db.collection("Products");
-
-    // Realizar la eliminación del usuario en la colección
-    const result = await collection.deleteOne({ _id: new ObjectId(productId) });  // Suponiendo que el ID del usuario sea único
-
-    // Verificar si se eliminó el usuario correctamente
-    if (result.deletedCount === 1) {
-      console.log("Producto eliminado correctamente.");
-      res.status(200).send("Producto eliminado correctamente.");
-    } else {
-      console.log("El Producto no pudo ser encontrado o eliminado.");
-      res.status(404).send("El Producto no pudo ser encontrado o eliminado.");
-    }
-
-    // Cerrar la conexión
-    client.close();
-    console.log("Conexión cerrada");
-  } catch (error) {
-    console.error("Error al conectar a MongoDB Atlas:", error);
-    res.status(500).send("Error al conectar a la base de datos");
-  }
-});
+    const navigation = useNavigate();
+    const [nombre, setNombre] = useState("");
+    const [apePa, setapePa] = useState("");
+    const [apeMa, setapeMa] = useState("");
+    const [email, setEmail] = useState("");
+    const [user, setUser] = useState("");
+    const [pass, setPass] = useState("");
+    const [confirmPass, setConfirmPass] = useState("");
 
 
-function enviarMensaje(estado) {
-  const message = estado === "ON" ? "ON" : estado === "MOVE" ? "MOVE" : "OFF"; // Si estado es "ON" entonces enviar "ON", si es "MOVE" entonces enviar "MOVE", de lo contrario enviar "OFF"
-  mqttClient.publish('PIXON', message);
-  console.log(`Mensaje MQTT enviado: ${message}`);
+    const hashedPassword = md5(pass);
+
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    // Función para verificar si el correo electrónico es válido
+    const isValidEmail = (email) => {
+        return emailRegex.test(email);
+    };
+    
+
+    const nameRegex = /^[A-Za-z\s]+$/;
+
+    const add = (event) => {
+        event.preventDefault();
+        if (!nombre || !apePa || !apeMa || !user || !email || !pass || !confirmPass) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error de registro',
+                text: 'Por favor completa todos los campos.',
+                timer: 3000
+            });
+        }
+        else if (!nameRegex.test(nombre) || !nameRegex.test(apePa) || !nameRegex.test(apeMa)) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error de registro',
+                text: 'El nombre y los apellidos no deben contener números.',
+                timer: 3000
+            });
+        } else if (!isValidEmail(email)) {
+            
+            Swal.fire({
+                icon: 'error',
+                title: 'Error de registro',
+                text: 'Por favor ingresa un correo electrónico válido.',
+                timer: 3000
+            });
+        }
+         else if (pass !== confirmPass) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error de registro',
+                text: 'Las contraseñas no coinciden.',
+                timer: 3000
+            });
+        }
+         else if (pass.length < 8) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error de registro',
+                text: 'La contraseña debe tener al menos 8 caracteres.',
+                timer: 3000
+            });
+        } else {
+            Axios.post("https://servermascoteh.onrender.com/Insert", {
+                nombre: nombre,
+                apePa: apePa,
+                apeMa: apeMa,
+                user: user,
+                email: email,
+                pass: hashedPassword
+            }).then(() => {
+                Swal.fire({
+                    icon: 'success',
+                    title: `Registro Exitoso`,
+                    text: `Bienvenido ${user}`,
+                    timer: 3000
+                }).then(() => {
+                    navigation("/InicioSesion");
+                });
+            }).catch(error => {
+                if (error.response && error.response.status === 400) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error de registro',
+                        text: 'Usuario ya Registrado',
+                        timer: 3000
+                    });
+                } else {
+                    console.error("Error:", error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error de registro',
+                        text: 'Usuario ya Registrado',
+                        timer: 3000
+                    });
+                }
+            });
+        }
+    };
+    return (
+        <section
+            className="u-align-center u-clearfix u-gradient u-section-signup"
+            id="carousel_c4a6"
+        >
+            <div className="u-clearfix u-sheet u-sheet-1">
+                <h2 className="u-custom-font u-text u-text-default u-text-1">
+                    Masco-Registro{" "}
+                </h2>
+                <div className="u-align-center u-container-style u-expanded-width-sm u-expanded-width-xs u-group u-radius-30 u-shape-round u-white u-group-1">
+                    <div className="u-container-layout u-container-layout-1">
+                        <div className="custom-expanded u-form u-form-1">
+                            <form
+
+                                className="u-clearfix u-form-spacing-15 u-form-vertical u-inner-form"
+                                source="email"
+                                name="form"
+                                style={{ padding: 0 }}
+                            >
+                                <div className="u-form-group u-form-name">
+                                    <label htmlFor="name-4c18" className="u-label u-label-1">
+                                        Nombre
+                                    </label>
+                                    <input
+                                        required
+                                        value={nombre} onChange={(event) => {
+                                            setNombre(event.target.value);
+                                        }}
+                                        type="text"
+                                        placeholder="Ingresa tu Nombre Completo"
+                                        id="name-4c18"
+                                        name="name"
+                                        className="u-border-signup u-border-white u-input u-input-rectangle u-radius-10"
+
+                                    />
+                                </div>
+                                <div className="u-form-group u-form-group-signup">
+                                    <label htmlFor="text-b7b1" className="u-label u-label-signup">
+                                        Apellido Paterno
+                                    </label>
+                                    <input
+                                        required
+                                        value={apePa}
+                                        onChange={(event) => {
+                                            setapePa(event.target.value);
+                                        }}
+                                        type="text"
+                                        placeholder="Ingresa tu Apellido Paterno"
+                                        id="text-b7b1"
+                                        name="text"
+                                        className="u-border-signup u-border-white u-input u-input-rectangle u-radius-10"
+                                    />
+                                </div>
+                                <div className="u-form-group u-form-group-3">
+                                    <label htmlFor="text-078a" className="u-label u-label-3">
+                                        Apellido Materno
+                                    </label>
+                                    <input
+                                        required
+                                        value={apeMa}
+                                        onChange={(event) => {
+                                            setapeMa(event.target.value);
+                                        }}
+                                        type="text"
+                                        placeholder="Ingresa tu Apellido Materno"
+                                        id="text-078a"
+                                        name="text-1"
+                                        className="u-border-signup u-border-white u-input u-input-rectangle u-radius-10"
+                                    />
+                                </div>
+                                <div className="u-form-group u-form-group-3">
+                                    <label htmlFor="text-078a" className="u-label u-label-3">
+                                        Usuario
+                                    </label>
+                                    <input
+                                        required
+                                        value={user}
+                                        onChange={(event) => {
+                                            setUser(event.target.value);
+                                        }}
+                                        type="text"
+                                        placeholder="Ingrese su nombre de Usuario"
+                                        id="text-078a"
+                                        name="text-1"
+                                        className="u-border-signup u-border-white u-input u-input-rectangle u-radius-10"
+                                    />
+                                </div>
+                                <div className="u-form-email u-form-group">
+                                    <label htmlFor="email-4c18" className="u-label u-label-4">
+                                        Correo Electronico
+                                    </label>
+                                    <input
+
+                                        value={email}
+                                        onChange={(event) => {
+                                            setEmail(event.target.value);
+                                        }}
+
+                                        type="email"
+                                        placeholder="Ingrese su Correo Electronico"
+                                        id="email-4c18"
+                                        name="email"
+                                        className="u-border-signup u-border-white u-input u-input-rectangle u-radius-10"
+                                        required
+                                    />
+
+                                </div>
+                                <div className="u-form-group u-form-group-5">
+                                    <label htmlFor="text-5847" className="u-label u-label-5">
+                                        Contraseña
+                                    </label>
+                                    <input
+                                        value={pass}
+                                        onChange={(event) => {
+                                            setPass(event.target.value);
+                                        }}
+                                        type="password"
+                                        placeholder="Ingrese su Contraseña"
+                                        id="text-5847"
+                                        name="text-signup"
+                                        className="u-border-signup u-border-white u-input u-input-rectangle u-radius-10"
+                                    />
+                                </div>
+                                <div className="u-form-group u-form-group-6">
+                                    <label htmlFor="text-signup38e" className="u-label u-label-6">
+                                        Confirmar Contraseña
+                                    </label>
+                                    <input
+                                        onChange={(e) => setConfirmPass(e.target.value)}
+                                        type="password"
+                                        id="text-signup38e"
+                                        name="text-3"
+                                        className="u-border-signup u-border-white u-input u-input-rectangle u-radius-10"
+                                        placeholder="Ingrese su Contraseña Nuevamente"
+                                    />
+                                </div>
+                                <div className="u-align-right u-form-group u-form-submit">
+                                    <button
+
+                                        onClick={(event) => add(event)}
+                                        className="u-active-custom-color-4 u-border-none u-btn u-btn-round u-btn-submit u-button-style u-custom-color-2 u-hover-custom-color-3 u-radius-50 u-text-active-black u-text-hover-black    u-btn-1"
+
+                                    >
+                                        Registrarse
+                                    </button>
+                                    <input
+                                        type="submit"
+                                        defaultValue="submit"
+                                        className="u-form-control-hidden"
+                                    />
+                                </div>
+
+                                <input type="hidden" defaultValue="" name="recaptchaResponse" />
+                                <input
+                                    type="hidden"
+                                    name="formServices"
+                                    defaultValue="dbab78bc-ebc6-f575-e7de-51319149f763"
+                                />
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+
+    );
 }
 
-app.get('/app/data-afnpg/endpoint/EcoNido', (req, res) => {
-  const { estado } = req.query; // Use req.query to get parameters from the URL
-
-  if (!estado || (estado !== "ON" && estado !== "OFF" && estado !== "MOVE")) {
-    return res.status(400).send('Invalid or missing estado value');
-  }
-
-  enviarMensaje(estado);
-
-  res.status(200).send(`Datos ${estado === "ON" ? 'Encendido' : 'Apagado'} recibidos y procesados`);
-});
-
-
-// Manejador de ruta para la ruta /enviar
-
-app.post('/app/data-afnpg/endpoint/EcoNido', async (req, res) => {
-  const { estado } = req.body;
-
-  if (estado !== "ON" && estado !== "OFF" && estado !== "MOVE") {
-    return res.status(400).send('Invalid estado value');
-  }
-
-  enviarMensaje(estado);
-
-  res.status(200).send(`Datos ${estado === "ON" ? 'Encendido' : estado === "OFF" ? 'Apagado' : 'Movido'} recibidos y procesados`);
-});
-
-
-
-// Manejar errores 404 para rutas no encontradas
-app.use((req, res, next) => {
-  res.status(404).send("Ruta no encontrada");
-});
-
-// Manejar errores 500
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).send('Error del servidor');
-});
-
-// Iniciar el servidor
-app.listen(port, () => {
-  console.log(`Servidor Node.js escuchando en http://localhost:${port}`);
-});
-
+export default Registro;
 
