@@ -63,7 +63,7 @@ app.post('/app/application-0-laqjr/endpoint/SensorData', async (req, res) => {
 
 app.post('/GetUser', async (req, res) => {
   console.log("sientre");
-  const { username , password } = req.body;
+  const { username, password } = req.body;
   console.log(username);
   console.log(password);
   try {
@@ -135,6 +135,32 @@ app.post('/Insert', async (req, res) => {
     res.status(500).send("Error al conectar a la base de datos");
   }
 });
+app.get('/usuarios', async (req, res) => {
+  console.log("entrepareverusaurios");
+  try {
+    // Conectar a la base de datos MongoDB Atlas
+    const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
+    console.log("Conexión exitosa a MongoDB Atlas");
+
+    // Obtener una referencia a la base de datos y la colección
+    const db = client.db("SensorData");
+    const collection = db.collection("Users");
+
+    // Realizar la consulta a la colección de usuarios
+    const usuarios = await collection.find({}).toArray();
+
+    // Cerrar la conexión
+    client.close();
+    console.log("Conexión cerrada");
+
+    // Responder con los resultados de la consulta
+    res.json(usuarios);
+  } catch (error) {
+    console.error("Error al conectar a MongoDB Atlas:", error);
+    res.status(500).send("Error al conectar a la base de datos");
+  }
+});
+
 function enviarMensaje(estado) {
   const message = estado === "ON" ? "ON" : estado === "MOVE" ? "MOVE" : "OFF"; // Si estado es "ON" entonces enviar "ON", si es "MOVE" entonces enviar "MOVE", de lo contrario enviar "OFF"
   mqttClient.publish('PIXON', message);
@@ -185,5 +211,6 @@ app.use((err, req, res, next) => {
 app.listen(port, () => {
   console.log(`Servidor Node.js escuchando en http://localhost:${port}`);
 });
+
 
 
