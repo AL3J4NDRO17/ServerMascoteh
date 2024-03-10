@@ -160,6 +160,39 @@ app.get('/usuarios', async (req, res) => {
     res.status(500).send("Error al conectar a la base de datos");
   }
 });
+app.delete('/delete/:id', async (req, res) => {
+  const userId = req.params.id; // Obtener el ID del usuario a eliminar desde los parámetros de la solicitud
+  console.log(userId);
+  try {
+    // Conectar a la base de datos MongoDB Atlas
+    const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
+    console.log("Conexión exitosa a MongoDB Atlas");
+
+    // Obtener una referencia a la base de datos y la colección
+    const db = client.db("SensorData");
+    const collection = db.collection("Users");
+
+    // Realizar la eliminación del usuario en la colección
+    const result = await collection.deleteOne({ _id: new ObjectId(userId) });  // Suponiendo que el ID del usuario sea único
+
+    // Verificar si se eliminó el usuario correctamente
+    if (result.deletedCount === 1) {
+      console.log("Usuario eliminado correctamente.");
+      res.status(200).send("Usuario eliminado correctamente.");
+    } else {
+      console.log("El usuario no pudo ser encontrado o eliminado.");
+      res.status(404).send("El usuario no pudo ser encontrado o eliminado.");
+    }
+
+    // Cerrar la conexión
+    client.close();
+    console.log("Conexión cerrada");
+  } catch (error) {
+    console.error("Error al conectar a MongoDB Atlas:", error);
+    res.status(500).send("Error al conectar a la base de datos");
+  }
+});
+
 
 function enviarMensaje(estado) {
   const message = estado === "ON" ? "ON" : estado === "MOVE" ? "MOVE" : "OFF"; // Si estado es "ON" entonces enviar "ON", si es "MOVE" entonces enviar "MOVE", de lo contrario enviar "OFF"
@@ -211,6 +244,4 @@ app.use((err, req, res, next) => {
 app.listen(port, () => {
   console.log(`Servidor Node.js escuchando en http://localhost:${port}`);
 });
-
-
 
