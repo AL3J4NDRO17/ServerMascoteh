@@ -127,6 +127,14 @@ app.post('/Insert', async (req, res) => {
         ID: null,
         // Otros campos del dispositivo...
       },
+      Direccion:{ 
+        Estado:null,
+        Calle:null,
+        Cp:null,
+        N_Casa:null,
+        Referencias:null
+
+      },
       permisos: "usuario"
     });
     console.log("Datos insertados en la base de datos");
@@ -422,6 +430,48 @@ app.get('/app/data-afnpg/endpoint/EcoNido', (req, res) => {
 
 
 // Manejador de ruta para la ruta /enviar
+
+/* ESP32
+
+
+
+
+
+*/
+app.get('/getDispositivo', async (req, res) => {
+  const dispositivoId = "65eab39b61ff359e597d8a39"; // Obtener el ID del usuario a editar desde los parámetros de la solicitud
+  // Obtener los datos del usuario a editar desde el cuerpo de la solicitud
+  console.log(dispositivoId);
+  try {
+    // Conectar a la base de datos MongoDB Atlas
+    const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
+    console.log("Conexión exitosa a MongoDB Atlas");
+
+    // Obtener una referencia a la base de datos y la colección
+    const db = client.db("SensorData");
+    const collection = db.collection("DeviceState");
+   
+    // Realizar la actualización del usuario en la colección
+    const result = await collection.findOne({ _id: new ObjectId(dispositivoId) });
+    // Verificar si se actualizó el usuario correctamente
+    console.log(result);
+    console.log("Producto encontrado correctamente.");
+    res.json(result);
+  
+    // Cerrar la conexión
+    client.close();
+    console.log("Conexión cerrada");
+
+    // Responder con los resultados de la consulta
+    
+    
+
+
+  } catch (error) {
+    console.error("Error al conectar a MongoDB Atlas:", error);
+    res.status(500).send("Error al conectar a la base de datos");
+  }
+});
 
 app.post('/app/data-afnpg/endpoint/EcoNido', async (req, res) => {
   const { estado } = req.body;
