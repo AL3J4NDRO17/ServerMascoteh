@@ -487,25 +487,6 @@ app.post('/app/data-afnpg/endpoint/EcoNido', async (req, res) => {
 
 });
 
-
-
-// Manejar errores 404 para rutas no encontradas
-app.use((req, res, next) => {
-  res.status(404).send("Ruta no encontrada");
-});
-
-// Manejar errores 500
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).send('Error del servidor');
-});
-
-// Iniciar el servidor
-app.listen(port, () => {
-  console.log(`Servidor Node.js escuchando en http://localhost:${port}`);
-});
-
-/* Quienes somos */
 app.get('/getQn', async (req, res) => {
 
   try {
@@ -531,3 +512,22 @@ app.get('/getQn', async (req, res) => {
     res.status(500).send("Error al conectar a la base de datos");
   }
 });
+
+// Manejar errores 404 para rutas no encontradas
+app.use((req, res, next) => {
+  res.status(404).send("Ruta no encontrada");
+});
+
+// Manejar errores 500
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send('Error del servidor');
+});
+
+// Iniciar el servidor
+app.listen(port, () => {
+  console.log(`Servidor Node.js escuchando en http://localhost:${port}`);
+});
+
+/* Quienes somos */
+
