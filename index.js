@@ -410,6 +410,18 @@ app.get('/getDetails/:id', async (req, res) => {
 });
 
 
+
+
+
+// Manejador de ruta para la ruta /enviar
+
+/* ESP32
+
+
+
+
+
+*/
 function enviarMensaje(estado) {
   const message = estado === "ON" ? "ON" : estado === "MOVE" ? "MOVE" : "OFF"; // Si estado es "ON" entonces enviar "ON", si es "MOVE" entonces enviar "MOVE", de lo contrario enviar "OFF"
   mqttClient.publish('PIXON', message);
@@ -427,17 +439,6 @@ app.get('/app/data-afnpg/endpoint/EcoNido', (req, res) => {
 
   res.status(200).send(`Datos ${estado === "ON" ? 'Encendido' : 'Apagado'} recibidos y procesados`);
 });
-
-
-// Manejador de ruta para la ruta /enviar
-
-/* ESP32
-
-
-
-
-
-*/
 app.get('/getDispositivo', async (req, res) => {
   const dispositivoId = "65eab39b61ff359e597d8a39"; // Obtener el ID del usuario a editar desde los parámetros de la solicitud
   // Obtener los datos del usuario a editar desde el cuerpo de la solicitud
@@ -482,7 +483,8 @@ app.post('/app/data-afnpg/endpoint/EcoNido', async (req, res) => {
 
   enviarMensaje(estado);
 
-  res.status(200).send(`Datos ${estado === "ON" ? 'Encendido' : estado === "OFF" ? 'Apagado' : 'Movido'} recibidos y procesados`);
+  res.status(200).send(`Datos ${estado === "ON" ? 'Encendido' : 'Apagado'} recibidos y procesados`);
+
 });
 
 
@@ -503,4 +505,29 @@ app.listen(port, () => {
   console.log(`Servidor Node.js escuchando en http://localhost:${port}`);
 });
 
+/* Quienes somos */
+app.get('/getQn', async (req, res) => {
 
+  try {
+    // Conectar a la base de datos MongoDB Atlas
+    const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
+    console.log("Conexión exitosa a MongoDB Atlas");
+
+    // Obtener una referencia a la base de datos y la colección
+    const db = client.db("SensorData");
+    const collection = db.collection("QuienesSomos");
+
+    // Realizar la consulta a la colección de usuarios
+    const Qns = await collection.find({}).toArray();
+
+    // Cerrar la conexión
+    client.close();
+    console.log("Conexión cerrada");
+
+    // Responder con los resultados de la consulta
+    res.json(Qns);
+  } catch (error) {
+    console.error("Error al conectar a MongoDB Atlas:", error);
+    res.status(500).send("Error al conectar a la base de datos");
+  }
+});
