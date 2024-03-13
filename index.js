@@ -519,7 +519,7 @@ app.get('/getQn', async (req, res) => {
 app.put('/quienesSomosEdit/:id', async (req, res) => {
   const QSId = req.params.id; // Obtener el ID de los datos a editar desde los parámetros de la solicitud
   const datos = req.body; // Obtener los datos a editar desde el cuerpo de la solicitud
-  console.log(datosId);
+  console.log(datos);
   try {
     // Conectar a la base de datos MongoDB Atlas
     const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
