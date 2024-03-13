@@ -59,7 +59,31 @@ app.post('/app/application-0-laqjr/endpoint/SensorData', async (req, res) => {
     res.status(500).send("Error al conectar a la base de datos");
   }
 });
+app.get('/dispositivo', async (req, res) => {
+  console.log("EntrogetDispositivo");
+  try {
+    // Conectar a la base de datos MongoDB Atlas
+    const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
+    console.log("Conexión exitosa a MongoDB Atlas");
 
+    // Obtener una referencia a la base de datos y la colección
+    const db = client.db("SensorData");
+    const collection = db.collection("DeviceState");
+
+    // Realizar la consulta a la colección de usuarios
+    const usuarios = await collection.find({}).toArray();
+
+    // Cerrar la conexión
+    client.close();
+    console.log("Conexión cerrada");
+
+    // Responder con los resultados de la consulta
+    res.json(usuarios);
+  } catch (error) {
+    console.error("Error al conectar a MongoDB Atlas:", error);
+    res.status(500).send("Error al conectar a la base de datos");
+  }
+});
 /* USUARIOS.
 .
 .
