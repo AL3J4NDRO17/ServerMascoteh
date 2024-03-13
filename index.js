@@ -622,7 +622,3 @@ app.listen(port, () => {
 });
 
 /* Quienes somos */
-
-
-/* Quienes somos */
-
