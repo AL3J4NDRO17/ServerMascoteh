@@ -487,6 +487,8 @@ app.post('/app/data-afnpg/endpoint/EcoNido', async (req, res) => {
 
 });
 
+
+/* Quienes Somos */
 app.get('/getQn', async (req, res) => {
 
   try {
@@ -507,11 +509,101 @@ app.get('/getQn', async (req, res) => {
 
     // Responder con los resultados de la consulta
     res.json(Qns);
+    console.log(Qns);
   } catch (error) {
     console.error("Error al conectar a MongoDB Atlas:", error);
     res.status(500).send("Error al conectar a la base de datos");
   }
 });
+//Editar
+app.put('/quienesSomosEdit/:id', async (req, res) => {
+  const QSId = req.params.id; // Obtener el ID de los datos a editar desde los parámetros de la solicitud
+  const datos = req.body; // Obtener los datos a editar desde el cuerpo de la solicitud
+  console.log(datosId);
+  try {
+    // Conectar a la base de datos MongoDB Atlas
+    const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
+    console.log("Conexión exitosa a MongoDB Atlas");
+
+    // Obtener una referencia a la base de datos y la colección
+    const db = client.db("SensorData");
+    const collection = db.collection("QuienesSomos");
+
+    // Realizar la actualización de los datos en la colección
+    const result = await collection.updateOne({ _id: new ObjectId(QSId) }, { $set: datos });
+
+    // Verificar si se actualizó correctamente
+    if (result.modifiedCount === 1) {
+      console.log("Datos actualizados correctamente.");
+      res.status(200).send("Datos actualizados correctamente.");
+    } else {
+      console.log("Los datos no pudieron ser encontrados o actualizados.");
+      res.status(404).send("Los datos no pudieron ser encontrados o actualizados.");
+    }
+
+    // Cerrar la conexión
+    client.close();
+    console.log("Conexión cerrada");
+  } catch (error) {
+    console.error("Error al conectar a MongoDB Atlas:", error);
+    res.status(500).send("Error al conectar a la base de datos");
+  }
+});
+
+
+app.get('/getPoliticas', async (req, res) => {
+
+  try {
+    // Conectar a la base de datos MongoDB Atlas
+    const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
+    console.log("Conexión exitosa a MongoDB Atlas");
+
+    // Obtener una referencia a la base de datos y la colección
+    const db = client.db("SensorData");
+    const collection = db.collection("Politicas");
+
+    // Realizar la consulta a la colección de usuarios
+    const politicas = await collection.find({}).toArray();
+
+    // Cerrar la conexión
+    client.close();
+    console.log("Conexión cerrada");
+
+    // Responder con los resultados de la consulta
+    res.json(politicas);
+    console.log(politicas);
+  } catch (error) {
+    console.error("Error al conectar a MongoDB Atlas:", error);
+    res.status(500).send("Error al conectar a la base de datos");
+  }
+});
+app.get('/getContac', async (req, res) => {
+
+  try {
+    // Conectar a la base de datos MongoDB Atlas
+    const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
+    console.log("Conexión exitosa a MongoDB Atlas");
+
+    // Obtener una referencia a la base de datos y la colección
+    const db = client.db("SensorData");
+    const collection = db.collection("Contacto");
+
+    // Realizar la consulta a la colección de usuarios
+    const contac = await collection.find({}).toArray();
+
+    // Cerrar la conexión
+    client.close();
+    console.log("Conexión cerrada");
+
+    // Responder con los resultados de la consulta
+    res.json(contac);
+    console.log(contac);
+  } catch (error) {
+    console.error("Error al conectar a MongoDB Atlas:", error);
+    res.status(500).send("Error al conectar a la base de datos");
+  }
+});
+
 
 // Manejar errores 404 para rutas no encontradas
 app.use((req, res, next) => {
@@ -528,6 +620,9 @@ app.use((err, req, res, next) => {
 app.listen(port, () => {
   console.log(`Servidor Node.js escuchando en http://localhost:${port}`);
 });
+
+/* Quienes somos */
+
 
 /* Quienes somos */
 
