@@ -636,7 +636,7 @@
     }
   });
 
-  //Editar
+  //Editar politicas
   app.put('/PoliticasEdit/:id', async (req, res) => {
     const poli = req.params.id; // Obtener el ID de los datos a editar desde los parámetros de la solicitud
     const datos = req.body; // Obtener los datos a editar desde el cuerpo de la solicitud
@@ -661,6 +661,39 @@
         console.log("Los datos no pudieron ser encontrados o actualizados.");
         res.status(404).send("Los datos no pudieron ser encontrados o actualizados.");
       }
+      // Eliminar una politica
+  app.delete('/Eliminarpolitica/:id', async (req, res) => {
+    const politicaId = req.params.id; // Obtener el ID del usuario a eliminar desde los parámetros de la solicitud
+    console.log(politicaId);
+    try {
+      // Conectar a la base de datos MongoDB Atlas
+      const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
+      console.log("Conexión exitosa a MongoDB Atlas");
+
+      // Obtener una referencia a la base de datos y la colección
+      const db = client.db("SensorData");
+      const collection = db.collection("Politicas");
+
+      // Realizar la eliminación de la politica en la colección
+      const result = await collection.deleteOne({ _id: new ObjectId(politicaId) });  // Suponiendo que el ID del usuario sea único
+
+      // Verificar si se eliminó la politica correctamente
+      if (result.deletedCount === 1) {
+        console.log("Politica eliminada correctamente.");
+        res.status(200).send("Politica eliminada correctamente.");
+      } else {
+        console.log("La politica no pudo ser encontrada o eliminada.");
+        res.status(404).send("La politica no pudo ser encontrado o eliminado.");
+      }
+
+      // Cerrar la conexión
+      client.close();
+      console.log("Conexión cerrada");
+    } catch (error) {
+      console.error("Error al conectar a MongoDB Atlas:", error);
+      res.status(500).send("Error al conectar a la base de datos");
+    }
+  });
 
       // Cerrar la conexión
       client.close();
@@ -676,8 +709,9 @@
 
   /*Contacto*/
   app.post('/InsertarContacto', async (req, res) => {
+    
     const { user, email, comentario, direccion }  = req.body;
-
+console.log(req.body);
     try {
       // Conectar a la base de datos MongoDB Atlas
       const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
