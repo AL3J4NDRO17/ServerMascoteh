@@ -83,9 +83,9 @@ app.post('/InsertHistoric', async (req, res) => {
 
     // Determinar el tipo de acción
     let accionRealizada = "";
-    if (data === "MOVE") {
+    if (data.Accion === "MOVE") {
       accionRealizada = "Alimento Dispensado";
-    } else if (data === "ON") {
+    } else if (data.Accion === "ON") {
       accionRealizada = "Agua Dispensada";
     } else {
       accionRealizada = "Otra acción"; // Puedes agregar un caso por defecto si lo necesitas
