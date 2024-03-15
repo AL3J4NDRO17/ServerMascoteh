@@ -61,6 +61,7 @@ app.post('/app/application-0-laqjr/endpoint/SensorData', async (req, res) => {
 });
 app.post('/InsertHistoric', async (req, res) => {
   const data = req.body;
+  console.log(data);
 
   try {
     // Conectar a la base de datos MongoDB Atlas
@@ -89,7 +90,7 @@ app.post('/InsertHistoric', async (req, res) => {
     } else {
       accionRealizada = "Otra acción"; // Puedes agregar un caso por defecto si lo necesitas
     }
-
+   
     // Insertar los datos en la colección
     await collection.insertOne({
       Accion: accionRealizada,
