@@ -59,8 +59,9 @@ app.post('/app/application-0-laqjr/endpoint/SensorData', async (req, res) => {
     res.status(500).send("Error al conectar a la base de datos");
   }
 });
-app.get('/dispositivo', async (req, res) => {
-  console.log("EntrogetDispositivo");
+app.post('/InsertHistoric', async (req, res) => {
+  const data = req.body;
+
   try {
     // Conectar a la base de datos MongoDB Atlas
     const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
@@ -68,17 +69,85 @@ app.get('/dispositivo', async (req, res) => {
 
     // Obtener una referencia a la base de datos y la colección
     const db = client.db("SensorData");
-    const collection = db.collection("DeviceState");
+    const collection = db.collection("DeviceHistoric");
 
-    // Realizar la consulta a la colección de usuarios
-    const usuarios = await collection.find({}).toArray();
+    // Obtener la fecha y la hora actuales
+    const fechaActual = new Date();
+    
+    // Obtener la fecha en formato AAAA-MM-DD
+    const fecha = fechaActual.toISOString().split('T')[0];
+ 
+    // Obtener la hora en formato HH:MM:SS
+    const hora = fechaActual.toTimeString().split(' ')[0];
+
+    // Determinar el tipo de acción
+    let accionRealizada = "";
+    if (data === "move") {
+      accionRealizada = "Alimento Dispensado";
+    } else if (data === "On") {
+      accionRealizada = "Agua Dispensada";
+    } else {
+      accionRealizada = "Otra acción"; // Puedes agregar un caso por defecto si lo necesitas
+    }
+
+    // Insertar los datos en la colección
+    await collection.insertOne({
+      Accion: accionRealizada,
+      Hora: hora,
+      Fecha: fecha,
+    });
+    console.log("Datos insertados en la base de datos");
 
     // Cerrar la conexión
     client.close();
     console.log("Conexión cerrada");
 
-    // Responder con los resultados de la consulta
-    res.json(usuarios);
+    // Responder a la ESP32 con un mensaje de confirmación
+    res.send("Datos recibidos y guardados en la base de datos");
+  } catch (error) {
+    console.error("Error al conectar a MongoDB Atlas:", error);
+    res.status(500).send("Error al conectar a la base de datos");
+  }
+});
+
+app.post('/InsertHistoric', async (req, res) => {
+  const data = req.body;
+
+  try {
+    // Conectar a la base de datos MongoDB Atlas
+    const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
+    console.log("Conexión exitosa a MongoDB Atlas");
+
+    // Obtener una referencia a la base de datos y la colección
+    const db = client.db("SensorData");
+    const collection = db.collection("DeviceHistoric");
+
+    // Verificar si el email ya existe en la colección
+     // Obtener la fecha y la hora actuales
+     const fechaActual = new Date();
+    
+     // Obtener la fecha en formato AAAA-MM-DD
+     const fecha = fechaActual.toISOString().split('T')[0];
+ 
+     // Obtener la hora en formato HH:MM:SS
+     const hora = fechaActual.toTimeString().split(' ')[0];
+
+    // Insertar los datos en la colección
+    await collection.insertOne({
+
+      Accion: data,
+      Hora: hora,
+      Fecha: fecha,
+
+    });
+    console.log("Datos insertados en la base de datos");
+
+    // Cerrar la conexión
+    client.close();
+    console.log("Conexión cerrada");
+
+    // Responder a la ESP32 con un mensaje de confirmación
+    res.send("Datos recibidos y guardados en la base de datos");
   } catch (error) {
     console.error("Error al conectar a MongoDB Atlas:", error);
     res.status(500).send("Error al conectar a la base de datos");
@@ -660,6 +729,42 @@ app.put('/PoliticasEdit/:id', async (req, res) => {
     } else {
       console.log("Los datos no pudieron ser encontrados o actualizados.");
       res.status(404).send("Los datos no pudieron ser encontrados o actualizados.");
+    }
+
+    // Cerrar la conexión
+    client.close();
+    console.log("Conexión cerrada");
+  } catch (error) {
+    console.error("Error al conectar a MongoDB Atlas:", error);
+    res.status(500).send("Error al conectar a la base de datos");
+  }
+});
+
+
+// Eliminar datos de la empresa
+app.delete('/EliminarDatos/:id', async (req, res) => {
+  console.log("Datos ente");
+  const DatosId = req.params.id; // Obtener el ID del usuario a eliminar desde los parámetros de la solicitud
+  console.log(DatosId);
+  try {
+    // Conectar a la base de datos MongoDB Atlas
+    const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
+    console.log("Conexión exitosa a MongoDB Atlas");
+
+    // Obtener una referencia a la base de datos y la colección
+    const db = client.db("SensorData");
+    const collection = db.collection("QuienesSomos");
+
+    // Realizar la eliminación de la politica en la colección
+    const result = await collection.deleteOne({ _id: new ObjectId(DatosId) });  // Suponiendo que el ID del usuario sea único
+
+    // Verificar si se eliminó la politica correctamente
+    if (result.deletedCount === 1) {
+      console.log("Datos eliminados correctamente.");
+      res.status(200).send("Datos eliminados correctamente.");
+    } else {
+      console.log("Los datos no pudieron ser encontrados o eliminados.");
+      res.status(404).send("Los datos no pudieron ser encontrados o eliminados.");
     }
 
     // Cerrar la conexión
