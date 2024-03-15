@@ -59,6 +59,31 @@ app.post('/app/application-0-laqjr/endpoint/SensorData', async (req, res) => {
     res.status(500).send("Error al conectar a la base de datos");
   }
 });
+app.get('/dispositivo', async (req, res) => {
+  console.log("EntrogetDispositivo");
+  try {
+    // Conectar a la base de datos MongoDB Atlas
+    const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
+    console.log("Conexión exitosa a MongoDB Atlas");
+
+    // Obtener una referencia a la base de datos y la colección
+    const db = client.db("SensorData");
+    const collection = db.collection("DeviceState");
+
+    // Realizar la consulta a la colección de usuarios
+    const usuarios = await collection.find({}).toArray();
+
+    // Cerrar la conexión
+    client.close();
+    console.log("Conexión cerrada");
+
+    // Responder con los resultados de la consulta
+    res.json(usuarios);
+  } catch (error) {
+    console.error("Error al conectar a MongoDB Atlas:", error);
+    res.status(500).send("Error al conectar a la base de datos");
+  }
+});
 app.post('/InsertHistoric', async (req, res) => {
   const data = req.body;
   console.log(data);
@@ -111,49 +136,6 @@ app.post('/InsertHistoric', async (req, res) => {
   }
 });
 
-app.post('/InsertHistoric', async (req, res) => {
-  const data = req.body;
-
-  try {
-    // Conectar a la base de datos MongoDB Atlas
-    const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
-    console.log("Conexión exitosa a MongoDB Atlas");
-
-    // Obtener una referencia a la base de datos y la colección
-    const db = client.db("SensorData");
-    const collection = db.collection("DeviceHistoric");
-
-    // Verificar si el email ya existe en la colección
-     // Obtener la fecha y la hora actuales
-     const fechaActual = new Date();
-    
-     // Obtener la fecha en formato AAAA-MM-DD
-     const fecha = fechaActual.toISOString().split('T')[0];
- 
-     // Obtener la hora en formato HH:MM:SS
-     const hora = fechaActual.toTimeString().split(' ')[0];
-
-    // Insertar los datos en la colección
-    await collection.insertOne({
-
-      Accion: data,
-      Hora: hora,
-      Fecha: fecha,
-
-    });
-    console.log("Datos insertados en la base de datos");
-
-    // Cerrar la conexión
-    client.close();
-    console.log("Conexión cerrada");
-
-    // Responder a la ESP32 con un mensaje de confirmación
-    res.send("Datos recibidos y guardados en la base de datos");
-  } catch (error) {
-    console.error("Error al conectar a MongoDB Atlas:", error);
-    res.status(500).send("Error al conectar a la base de datos");
-  }
-});
 /* USUARIOS.
 .
 .
