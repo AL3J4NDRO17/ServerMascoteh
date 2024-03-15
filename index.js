@@ -1,4 +1,4 @@
-  const express = require('express');
+const express = require('express');
 const bodyParser = require('body-parser');
 const { MongoClient, ObjectId } = require('mongodb');
 
@@ -82,9 +82,9 @@ app.post('/InsertHistoric', async (req, res) => {
 
     // Determinar el tipo de acción
     let accionRealizada = "";
-    if (data === "move") {
+    if (data === "MOVE") {
       accionRealizada = "Alimento Dispensado";
-    } else if (data === "On") {
+    } else if (data === "ON") {
       accionRealizada = "Agua Dispensada";
     } else {
       accionRealizada = "Otra acción"; // Puedes agregar un caso por defecto si lo necesitas
