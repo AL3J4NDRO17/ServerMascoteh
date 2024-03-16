@@ -412,6 +412,32 @@ app.post('/InsertProduct', async (req, res) => {
     res.status(500).send("Error al conectar a la base de datos");
   }
 });
+app.get('/productos/:tipo', async (req, res) => {
+  try {
+    const tipo = req.params.tipo; // Obtener el tipo de producto desde la URL
+
+    const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
+    console.log("Conexión exitosa a MongoDB Atlas");
+
+    // Obtener una referencia a la base de datos y la colección
+    const db = client.db("SensorData");
+    const collection = db.collection("Products");
+
+    // Realizar la consulta a la colección de productos filtrando por el tipo
+    const productos = await collection.find({ tipo: tipo }).toArray();
+
+    // Cerrar la conexión
+    client.close();
+    console.log("Conexión cerrada");
+
+    // Responder con los resultados de la consulta
+    res.json(productos);
+  } catch (error) {
+    console.error("Error al obtener productos:", error);
+    res.status(500).send("Error al obtener productos");
+  }
+});
+
 
 // Actualizar un producto existente
 app.put('/productosedit/:id', async (req, res) => {
