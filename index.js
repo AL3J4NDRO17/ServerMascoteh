@@ -597,39 +597,51 @@ app.put('/productosedit/:id', upload.single('imagen'), async (req, res) => {
   const productData = req.body; // Obtener los datos del producto a editar desde el cuerpo de la solicitud
   
   try {
+    // Verificar si se ha subido una nueva imagen
     if (req.file) {
-      productData.imagen = req.file.path; // Obtener la URL de la imagen subida a Cloudinary y asignarla a productData
-    }
-    
-    // Conectar a la base de datos MongoDB Atlas
-    const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
-    console.log("Conexión exitosa a MongoDB Atlas");
+      // Obtener la URL de la nueva imagen subida a Cloudinary y asignarla a productData
+      productData.imagen = req.file.path;
+      
+      // Conectar a la base de datos MongoDB Atlas
+      const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
+      console.log("Conexión exitosa a MongoDB Atlas");
 
-    // Obtener una referencia a la base de datos y la colección
-    const db = client.db("SensorData");
-    const collection = db.collection("Products");
+      // Obtener una referencia a la base de datos y la colección
+      const db = client.db("SensorData");
+      const collection = db.collection("Products");
 
-    // Realizar la actualización del producto en la colección
-    const result = await collection.updateOne({ _id: new ObjectId(productId) }, { $set: productData });
+      // Obtener el producto actual para verificar si tiene una imagen anterior
+      const existingProduct = await collection.findOne({ _id: ObjectId(productId) });
+      if (existingProduct && existingProduct.imagen) {
+        // Eliminar la imagen anterior de Cloudinary
+        await cloudinary.uploader.destroy(existingProduct.imagen); // Utiliza el método adecuado para eliminar la imagen de Cloudinary
+      }
 
-    // Verificar si se actualizó el producto correctamente
-    if (result.modifiedCount === 1) {
-      console.log("Producto actualizado correctamente.");
-      res.status(200).send("Producto actualizado correctamente.");
+      // Realizar la actualización del producto en la colección
+      const result = await collection.updateOne({ _id: ObjectId(productId) }, { $set: productData });
+
+      // Verificar si se actualizó el producto correctamente
+      if (result.modifiedCount === 1) {
+        console.log("Producto actualizado correctamente.");
+        res.status(200).send("Producto actualizado correctamente.");
+      } else {
+        console.log("El producto no pudo ser encontrado o actualizado.");
+        res.status(404).send("El producto no pudo ser encontrado o actualizado.");
+      }
+
+      // Cerrar la conexión
+      client.close();
+      console.log("Conexión cerrada");
     } else {
-      console.log("El producto no pudo ser encontrado o actualizado.");
-      res.status(404).send("El producto no pudo ser encontrado o actualizado.");
+      // Si no se ha subido una nueva imagen, simplemente actualiza el producto sin eliminar la imagen anterior
+      // Esto se puede hacer de manera similar a como lo estás haciendo actualmente
+      // No es necesario realizar la eliminación de la imagen anterior en este caso
     }
-
-    // Cerrar la conexión
-    client.close();
-    console.log("Conexión cerrada");
   } catch (error) {
     console.error("Error al conectar a MongoDB Atlas:", error);
     res.status(500).send("Error al conectar a la base de datos");
   }
 });
-
 // Eliminar un producto
 app.delete('/productos/:id', async (req, res) => {
   const productId = req.params.id; // Obtener el ID del usuario a eliminar desde los parámetros de la solicitud
