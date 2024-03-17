@@ -31,8 +31,8 @@ const { v4: uuidv4 } = require('uuid');
 const cloudinary = require('cloudinary').v2;
 
 cloudinary.config({
-  cloud_name: 'MASCOTEH',
-  api_key: 't772874229173864',
+  cloud_name: 'ds6sucunj',
+  api_key: '772874229173864',
   api_secret: 'TYM3LWIENLvPMOB7AzefRJztr2E'
 });
 
@@ -48,6 +48,7 @@ const storage = new CloudinaryStorage({
   }
 });
 
+
 // Configurar Multer para manejar la carga de archivos
 const upload = multer({ storage: storage });
 
@@ -61,46 +62,7 @@ app.post('/upload-image', upload.single('imagen'), (req, res) => {
   // Devuelve la URL de la imagen subida a Cloudinary
   res.json({ mensaje: 'Imagen subida a Cloudinary con éxito', url: req.file.path });
 });
-app.post('/InsertProduct', upload.single('imagen'), async (req, res) => {
-  console.log("entre en la ruta para insertar productos");
-  
-  try {
-    // Extraer los datos del producto del cuerpo de la solicitud
-    const data = req.body;
-    
-    // Verificar si se ha subido una imagen y obtener su URL de Cloudinary si es así
-    let imagenUrl = null;
-    if (req.file) {
-      imagenUrl = req.file.path; // Obtener la URL de la imagen subida a Cloudinary
-    }
-    
-    // Agregar la URL de la imagen a los datos del producto
-    data.imagenUrl = imagenUrl;
-    
-    // Conectar a la base de datos MongoDB Atlas
-    const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
-    console.log("Conexión exitosa a MongoDB Atlas");
 
-    // Obtener una referencia a la base de datos y la colección
-    const db = client.db("SensorData");
-    const collection = db.collection("Products");
-
-    // Insertar los datos en la colección
-    await collection.insertOne(data);
-
-    console.log("Datos insertados en la base de datos");
-
-    // Cerrar la conexión
-    client.close();
-    console.log("Conexión cerrada");
-
-    // Responder con un mensaje de confirmación
-    res.send("Datos recibidos y guardados en la base de datos");
-  } catch (error) {
-    console.error("Error al conectar a MongoDB Atlas:", error);
-    res.status(500).send("Error al conectar a la base de datos");
-  }
-});
 
 app.post('/app/application-0-laqjr/endpoint/SensorData', async (req, res) => {
   const data = req.body;
@@ -558,13 +520,50 @@ app.get('/productos', async (req, res) => {
     res.status(500).send("Error al obtener productos");
   }
 });
+app.post('/InsertProduct', upload.single('imagen'), async (req, res) => {
+  console.log("entre en la ruta para insertar productos");
+  
+  try {
+    // Extraer los datos del producto del cuerpo de la solicitud
+    const data = req.body;
+    
+    // Verificar si se ha subido una imagen y obtener su URL de Cloudinary si es así
+    let image = null;
+    if (req.file) {
+      image = req.file.path; // Obtener la URL de la imagen subida a Cloudinary
+    }
+    
+    // Agregar la URL de la imagen a los datos del producto
+    data.imagen = image;
+    
+    // Conectar a la base de datos MongoDB Atlas
+    const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
+    console.log("Conexión exitosa a MongoDB Atlas");
 
+    // Obtener una referencia a la base de datos y la colección
+    const db = client.db("SensorData");
+    const collection = db.collection("Products");
+
+    // Insertar los datos en la colección
+    await collection.insertOne(data);
+
+    console.log("Datos insertados en la base de datos");
+
+    // Cerrar la conexión
+    client.close();
+    console.log("Conexión cerrada");
+
+    // Responder con un mensaje de confirmación
+    res.send("Datos recibidos y guardados en la base de datos");
+  } catch (error) {
+    console.error("Error al conectar a MongoDB Atlas:", error);
+    res.status(500).send("Error al conectar a la base de datos");
+  }
+});
 // Agregar un nuevo producto
 
 // Modificar la función para agregar productos en el cliente
-const agregarProducto = () => {
-  // Modificar esta función para incluir la subida de la imagen al servidor
-};
+
 app.get('/productos/:tipo', async (req, res) => {
   try {
     const tipo = req.params.tipo; // Obtener el tipo de producto desde la URL
@@ -593,11 +592,15 @@ app.get('/productos/:tipo', async (req, res) => {
 
 
 // Actualizar un producto existente
-app.put('/productosedit/:id', async (req, res) => {
-  const productId = req.params.id; // Obtener el ID del usuario a editar desde los parámetros de la solicitud
-  const productData = req.body; // Obtener los datos del usuario a editar desde el cuerpo de la solicitud
-  console.log(productId);
+app.put('/productosedit/:id', upload.single('imagen'), async (req, res) => {
+  const productId = req.params.id;
+  const productData = req.body; // Obtener los datos del producto a editar desde el cuerpo de la solicitud
+  
   try {
+    if (req.file) {
+      productData.imagen = req.file.path; // Obtener la URL de la imagen subida a Cloudinary y asignarla a productData
+    }
+    
     // Conectar a la base de datos MongoDB Atlas
     const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
     console.log("Conexión exitosa a MongoDB Atlas");
@@ -606,16 +609,16 @@ app.put('/productosedit/:id', async (req, res) => {
     const db = client.db("SensorData");
     const collection = db.collection("Products");
 
-    // Realizar la actualización del usuario en la colección
+    // Realizar la actualización del producto en la colección
     const result = await collection.updateOne({ _id: new ObjectId(productId) }, { $set: productData });
 
-    // Verificar si se actualizó el usuario correctamente
+    // Verificar si se actualizó el producto correctamente
     if (result.modifiedCount === 1) {
-      console.log("Usuario actualizado correctamente.");
-      res.status(200).send("Usuario actualizado correctamente.");
+      console.log("Producto actualizado correctamente.");
+      res.status(200).send("Producto actualizado correctamente.");
     } else {
-      console.log("El usuario no pudo ser encontrado o actualizado.");
-      res.status(404).send("El usuario no pudo ser encontrado o actualizado.");
+      console.log("El producto no pudo ser encontrado o actualizado.");
+      res.status(404).send("El producto no pudo ser encontrado o actualizado.");
     }
 
     // Cerrar la conexión
