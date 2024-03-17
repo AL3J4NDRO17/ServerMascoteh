@@ -54,18 +54,52 @@ const upload = multer({ storage: storage });
 // Ahora puedes utilizar "upload" como middleware en tu ruta de subida de imágenes
 
 // Ejemplo de cómo usarlo en una ruta de Express
-app.post('/subir-imagen', upload.single('imagen'), (req, res) => {
-  // Acciones después de subir la imagen
-  res.send('¡Imagen subida correctamente!');
-});
 
 
-
-
-app.post('/subir-imagen', upload.single('imagen'), (req, res) => {
-  console.log("entre PARA SUBIR IMAGEN");
-  // El archivo se ha subido correctamente a Cloudinary y puedes acceder a su información en req.file
+app.post('/upload-image', upload.single('imagen'), (req, res) => {
+  console.log("Imagen subida a Cloudinary con éxito");
+  // Devuelve la URL de la imagen subida a Cloudinary
   res.json({ mensaje: 'Imagen subida a Cloudinary con éxito', url: req.file.path });
+});
+app.post('/InsertProduct', upload.single('imagen'), async (req, res) => {
+  console.log("entre en la ruta para insertar productos");
+  
+  try {
+    // Extraer los datos del producto del cuerpo de la solicitud
+    const data = req.body;
+    
+    // Verificar si se ha subido una imagen y obtener su URL de Cloudinary si es así
+    let imagenUrl = null;
+    if (req.file) {
+      imagenUrl = req.file.path; // Obtener la URL de la imagen subida a Cloudinary
+    }
+    
+    // Agregar la URL de la imagen a los datos del producto
+    data.imagenUrl = imagenUrl;
+    
+    // Conectar a la base de datos MongoDB Atlas
+    const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
+    console.log("Conexión exitosa a MongoDB Atlas");
+
+    // Obtener una referencia a la base de datos y la colección
+    const db = client.db("SensorData");
+    const collection = db.collection("Products");
+
+    // Insertar los datos en la colección
+    await collection.insertOne(data);
+
+    console.log("Datos insertados en la base de datos");
+
+    // Cerrar la conexión
+    client.close();
+    console.log("Conexión cerrada");
+
+    // Responder con un mensaje de confirmación
+    res.send("Datos recibidos y guardados en la base de datos");
+  } catch (error) {
+    console.error("Error al conectar a MongoDB Atlas:", error);
+    res.status(500).send("Error al conectar a la base de datos");
+  }
 });
 
 app.post('/app/application-0-laqjr/endpoint/SensorData', async (req, res) => {
@@ -526,36 +560,7 @@ app.get('/productos', async (req, res) => {
 });
 
 // Agregar un nuevo producto
-app.post('/InsertProduct', upload.single('imagen'), async (req, res) => {
-  const data = req.body;
-  const imagenUrl = req.file.path; // Obtener la URL de la imagen subida a Cloudinary
-  data.imagenUrl = imagenUrl; // Agregar la URL de la imagen a los datos del producto
 
-  try {
-    // Conectar a la base de datos MongoDB Atlas
-    const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
-    console.log("Conexión exitosa a MongoDB Atlas");
-
-    // Obtener una referencia a la base de datos y la colección
-    const db = client.db("SensorData");
-    const collection = db.collection("Products");
-
-    // Insertar los datos en la colección
-    await collection.insertOne(data);
-
-    console.log("Datos insertados en la base de datos");
-
-    // Cerrar la conexión
-    client.close();
-    console.log("Conexión cerrada");
-
-    // Responder con un mensaje de confirmación
-    res.send("Datos recibidos y guardados en la base de datos");
-  } catch (error) {
-    console.error("Error al conectar a MongoDB Atlas:", error);
-    res.status(500).send("Error al conectar a la base de datos");
-  }
-});
 // Modificar la función para agregar productos en el cliente
 const agregarProducto = () => {
   // Modificar esta función para incluir la subida de la imagen al servidor
