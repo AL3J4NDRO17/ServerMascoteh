@@ -611,14 +611,14 @@ app.put('/productosedit/:id', upload.single('imagen'), async (req, res) => {
       const collection = db.collection("Products");
 
       // Obtener el producto actual para verificar si tiene una imagen anterior
-      const existingProduct = await collection.findOne({ _id: ObjectId(productId) });
+      const existingProduct = await collection.findOne({ _id: new ObjectId(productId) });
       if (existingProduct && existingProduct.imagen) {
         // Eliminar la imagen anterior de Cloudinary
         await cloudinary.uploader.destroy(existingProduct.imagen); // Utiliza el método adecuado para eliminar la imagen de Cloudinary
       }
 
       // Realizar la actualización del producto en la colección
-      const result = await collection.updateOne({ _id: ObjectId(productId) }, { $set: productData });
+      const result = await collection.updateOne({ _id: new ObjectId(productId) }, { $set: productData });
 
       // Verificar si se actualizó el producto correctamente
       if (result.modifiedCount === 1) {
