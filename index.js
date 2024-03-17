@@ -556,7 +556,6 @@ app.post('/InsertProduct', upload.single('imagen'), async (req, res) => {
     res.status(500).send("Error al conectar a la base de datos");
   }
 });
-
 // Modificar la función para agregar productos en el cliente
 const agregarProducto = () => {
   // Modificar esta función para incluir la subida de la imagen al servidor
