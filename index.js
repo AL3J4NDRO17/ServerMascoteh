@@ -6,6 +6,7 @@ const cors = require('cors');
 const mqtt = require('mqtt'); // Importar el módulo MQTT}
 
 
+
 const app = express();
 const port = 3000;
 
@@ -21,6 +22,51 @@ const mongoUrl = "mongodb+srv://pixon:Filo1234@cluster0.sw8tbcs.mongodb.net/?ret
 
 const mqttClient = mqtt.connect('mqtt://broker.emqx.io');
 // Ruta para recibir datos desde la ESP32
+
+
+/* Cloudinari */
+const multer = require('multer');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const { v4: uuidv4 } = require('uuid');
+const cloudinary = require('cloudinary').v2;
+
+cloudinary.config({
+  cloud_name: 'MASCOTEH',
+  api_key: 't772874229173864',
+  api_secret: 'TYM3LWIENLvPMOB7AzefRJztr2E'
+});
+
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'Mascoteh/Products',
+    format: async (req, file) => 'png',
+    public_id: (req, file) => {
+      const randomName = uuidv4();
+      return randomName;
+    }
+  }
+});
+
+// Configurar Multer para manejar la carga de archivos
+const upload = multer({ storage: storage });
+
+// Ahora puedes utilizar "upload" como middleware en tu ruta de subida de imágenes
+
+// Ejemplo de cómo usarlo en una ruta de Express
+app.post('/subir-imagen', upload.single('imagen'), (req, res) => {
+  // Acciones después de subir la imagen
+  res.send('¡Imagen subida correctamente!');
+});
+
+
+
+
+app.post('/subir-imagen', upload.single('imagen'), (req, res) => {
+  console.log("entre PARA SUBIR IMAGEN");
+  // El archivo se ha subido correctamente a Cloudinary y puedes acceder a su información en req.file
+  res.json({ mensaje: 'Imagen subida a Cloudinary con éxito', url: req.file.path });
+});
 
 app.post('/app/application-0-laqjr/endpoint/SensorData', async (req, res) => {
   const data = req.body;
@@ -99,10 +145,10 @@ app.post('/InsertHistoric', async (req, res) => {
 
     // Obtener la fecha y la hora actuales
     const fechaActual = new Date();
-    
+
     // Obtener la fecha en formato AAAA-MM-DD
     const fecha = fechaActual.toISOString().split('T')[0];
- 
+
     // Obtener la hora en formato HH:MM:SS
     const hora = fechaActual.toTimeString().split(' ')[0];
 
@@ -115,7 +161,7 @@ app.post('/InsertHistoric', async (req, res) => {
     } else {
       accionRealizada = "Otra acción"; // Puedes agregar un caso por defecto si lo necesitas
     }
-   
+
     // Insertar los datos en la colección
     await collection.insertOne({
       Accion: accionRealizada,
@@ -141,8 +187,33 @@ app.post('/InsertHistoric', async (req, res) => {
 .
 .
 . */
+app.get('/getHistorial', async (req, res) => {
+  console.log("¡Entré!");
+
+  try {
+    // Conectar a la base de datos MongoDB Atlas
+    const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
+    console.log("Conexión exitosa a MongoDB Atlas");
+
+    // Obtener una referencia a la base de datos y la colección
+    const db = client.db("SensorData");
+    const collection = db.collection("DeviceHistoric");
+
+    // Consultar todos los registros en la colección DeviceState
+    const deviceStates = await collection.find({}).toArray();
+
+    // Respondemos con los registros obtenidos
+    res.status(200).json(deviceStates);
+    console.log(deviceStates);
+
+  } catch (error) {
+    console.error("Error al conectar a MongoDB Atlas:", error);
+    res.status(500).send("Error al conectar a la base de datos");
+  }
+});
+
 app.post('/GetDispobyId', async (req, res) => {
-  console.log("sientre");
+  console.log("¡Entré!");
   const { username: id } = req.body;
   console.log(id);
 
@@ -156,7 +227,46 @@ app.post('/GetDispobyId', async (req, res) => {
     const collection = db.collection("Users");
 
     // Verificar si el usuario existe en la colección
-    const existingUser = await collection.findOne({ user: id, pass: password });
+    const existingUser = await collection.findOne({ _id: new ObjectId(id) });
+    if (existingUser) {
+      console.log("¡Usuario Encontrado!");
+
+      // Obtener el valor del campo "Dispositivo.ID" del usuario, manejar el caso nulo
+      const dispositivoID = existingUser.Dispositivo ? existingUser.Dispositivo.ID : null ? existingUser.Dispositivo.ID : "";
+      console.log("ID del Dispositivo:", dispositivoID);
+
+      // Respondemos con el valor del campo "Dispositivo.ID" del usuario
+      res.status(200).json({ dispositivoID });
+
+      return; // Terminar la ejecución de la función
+    }
+
+    // Si no se encuentra ningún usuario, respondemos con un mensaje indicando que no existe
+    console.log("Usuario no encontrado");
+    res.status(404).send("Usuario no encontrado");
+
+  } catch (error) {
+    console.error("Error al conectar a MongoDB Atlas:", error);
+    res.status(500).send("Error al conectar a la base de datos");
+  }
+});
+
+app.post('/validateUser', async (req, res) => {
+  console.log("sientre");
+  const { username } = req.body;
+  console.log(username);
+
+  try {
+    // Conectar a la base de datos MongoDB Atlas
+    const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
+    console.log("Conexión exitosa a MongoDB Atlas");
+
+    // Obtener una referencia a la base de datos y la colección
+    const db = client.db("SensorData");
+    const collection = db.collection("Users");
+
+    // Verificar si el usuario existe en la colección
+    const existingUser = await collection.findOne({ user: username });
     if (existingUser) {
       console.log("Usuario Encontrado:", existingUser);
       // Respondemos con el usuario encontrado
@@ -173,6 +283,40 @@ app.post('/GetDispobyId', async (req, res) => {
     res.status(500).send("Error al conectar a la base de datos");
   }
 });
+app.post('/validateAnswer', async (req, res) => {
+  console.log("sientre");
+  const { option, asnwer } = req.body;
+  console.log(req.body);
+
+  try {
+    // Conectar a la base de datos MongoDB Atlas
+    const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
+    console.log("Conexión exitosa a MongoDB Atlas");
+
+    // Obtener una referencia a la base de datos y la colección
+    const db = client.db("SensorData");
+    const collection = db.collection("Users");
+
+    // Verificar si el usuario existe en la colección
+    const existingUser = await collection.findOne({ question: option, asnwer: asnwer });
+    if (existingUser) {
+      console.log("Datos encontrados", existingUser);
+      // Respondemos con el usuario encontrado
+      res.status(200).json(existingUser);
+      return; // Terminar la ejecución de la función
+    }
+
+    // Si no se encuentra ningún usuario, respondemos con un mensaje indicando que no existe
+    console.log("Datos no encontrados");
+    res.status(404).send("Datos no encontrados");
+
+  } catch (error) {
+    console.error("Error al conectar a MongoDB Atlas:", error);
+    res.status(500).send("Error al conectar a la base de datos");
+  }
+});
+
+
 app.post('/GetUser', async (req, res) => {
   console.log("sientre");
   const { username, password } = req.body;
@@ -366,7 +510,7 @@ app.get('/productos', async (req, res) => {
     const db = client.db("SensorData");
     const collection = db.collection("Products");
 
-    // Realizar la consulta a la colección de usuarios
+
     const producto = await collection.find({}).toArray();
 
     // Cerrar la conexión
@@ -382,10 +526,11 @@ app.get('/productos', async (req, res) => {
 });
 
 // Agregar un nuevo producto
-app.post('/InsertProduct', async (req, res) => {
-
+app.post('/InsertProduct', upload.single('imagen'), async (req, res) => {
   const data = req.body;
-  console.log(data);
+  const imagenUrl = req.file.path; // Obtener la URL de la imagen subida a Cloudinary
+  data.imagenUrl = imagenUrl; // Agregar la URL de la imagen a los datos del producto
+
   try {
     // Conectar a la base de datos MongoDB Atlas
     const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
@@ -395,9 +540,8 @@ app.post('/InsertProduct', async (req, res) => {
     const db = client.db("SensorData");
     const collection = db.collection("Products");
 
-    // Verificar si el email ya existe en la colección
     // Insertar los datos en la colección
-    await collection.insertOne({ ...data }); // Establecer permisos de usuario automáticamente
+    await collection.insertOne(data);
 
     console.log("Datos insertados en la base de datos");
 
@@ -405,13 +549,18 @@ app.post('/InsertProduct', async (req, res) => {
     client.close();
     console.log("Conexión cerrada");
 
-    // Responder a la ESP32 con un mensaje de confirmación
+    // Responder con un mensaje de confirmación
     res.send("Datos recibidos y guardados en la base de datos");
   } catch (error) {
     console.error("Error al conectar a MongoDB Atlas:", error);
     res.status(500).send("Error al conectar a la base de datos");
   }
 });
+
+// Modificar la función para agregar productos en el cliente
+const agregarProducto = () => {
+  // Modificar esta función para incluir la subida de la imagen al servidor
+};
 app.get('/productos/:tipo', async (req, res) => {
   try {
     const tipo = req.params.tipo; // Obtener el tipo de producto desde la URL
