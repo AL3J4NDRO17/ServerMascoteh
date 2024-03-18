@@ -1,9 +1,10 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const { MongoClient, ObjectId } = require('mongodb');
-
+const nodemailer = require("nodemailer");
 const cors = require('cors');
 const mqtt = require('mqtt'); // Importar el módulo MQTT}
+const uuid = require('uuid');
 
 
 
@@ -246,7 +247,78 @@ app.post('/GetDispobyId', async (req, res) => {
     res.status(500).send("Error al conectar a la base de datos");
   }
 });
+/* PASSWORD
 
+
+
+
+
+
+
+
+*/
+app.put('/resetPass/:id', async (req, res) => {
+  const userId = req.params.id; // Obtener el ID del usuario a editar desde los parámetros de la solicitud
+  const userData = req.body; // Obtener los datos del usuario a editar desde el cuerpo de la solicitud
+  console.log(userId);
+  try {
+    // Conectar a la base de datos MongoDB Atlas
+    const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
+    console.log("Conexión exitosa a MongoDB Atlas");
+
+    // Obtener una referencia a la base de datos y la colección
+    const db = client.db("SensorData");
+    const collection = db.collection("Users");
+
+    // Realizar la actualización del usuario en la colección
+    const result = await collection.updateOne({ _id: new ObjectId(userId) }, { $set: userData });
+
+    // Verificar si se actualizó el usuario correctamente
+    if (result.modifiedCount === 1) {
+      console.log("Contraeña actualizada");
+      res.status(200).send("Usuario actualizado correctamente.");
+    } else {
+      console.log("no se actializo la contra");
+      res.status(404).send("El usuario no pudo ser encontrado o actualizado.");
+    }
+
+    // Cerrar la conexión
+    client.close();
+    console.log("Conexión cerrada");
+  } catch (error) {
+    console.error("Error al conectar a MongoDB Atlas:", error);
+    res.status(500).send("Error al conectar a la base de datos");
+  }
+});
+
+// Configuracion del transporte
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: "mascoteh9@gmail.com",
+    pass: "zxxj wquz seop fazd",
+  },
+});
+app.post('/email', (req, res) => {
+  const { email } = req.body;
+  const uniqueToken = uuid.v4().slice(0, 6);
+  const mailOptions = {
+    from: "mascoteh9@gmail.com",
+    to: email,
+    subject: 'Recuperacion de contraseña',
+    text:` Token unico para la recuperacion de contraseña: ${ uniqueToken }`,
+};
+
+transporter.sendMail(mailOptions, (error, info) => {
+  if (error) {
+    console.error('Error al enviar el correo electrónico:', error);
+    return res.status(500).json({ status: false, error: 'Error al enviar el correo electrónico', details: error });
+  } else {
+    console.log('Correo electrónico enviado:', info.response);
+    return res.status(200).json({ status: true, message: 'Correo electrónico enviado exitosamente', token: uniqueToken });
+  }
+});
+});
 app.post('/validateUser', async (req, res) => {
   console.log("sientre");
   const { username } = req.body;
@@ -281,7 +353,7 @@ app.post('/validateUser', async (req, res) => {
 });
 app.post('/validateAnswer', async (req, res) => {
   console.log("sientre");
-  const { option, asnwer } = req.body;
+  const { option, answer } = req.body;
   console.log(req.body);
 
   try {
@@ -293,25 +365,23 @@ app.post('/validateAnswer', async (req, res) => {
     const db = client.db("SensorData");
     const collection = db.collection("Users");
 
-    // Verificar si el usuario existe en la colección
-    const existingUser = await collection.findOne({ question: option, asnwer: asnwer });
+    // Verificar si la pregunta y respuesta coinciden con los datos en la base de datos
+    const existingUser = await collection.findOne({ question: option, answer: answer });
     if (existingUser) {
       console.log("Datos encontrados", existingUser);
       // Respondemos con el usuario encontrado
       res.status(200).json(existingUser);
-      return; // Terminar la ejecución de la función
+    } else {
+      // Si no se encuentra ninguna coincidencia, respondemos con un mensaje indicando que los datos son incorrectos
+      console.log("Datos incorrectos");
+      res.status(404).send("Datos incorrectos");
     }
-
-    // Si no se encuentra ningún usuario, respondemos con un mensaje indicando que no existe
-    console.log("Datos no encontrados");
-    res.status(404).send("Datos no encontrados");
 
   } catch (error) {
     console.error("Error al conectar a MongoDB Atlas:", error);
     res.status(500).send("Error al conectar a la base de datos");
   }
 });
-
 
 app.post('/GetUser', async (req, res) => {
   console.log("sientre");
@@ -522,20 +592,20 @@ app.get('/productos', async (req, res) => {
 });
 app.post('/InsertProduct', upload.single('imagen'), async (req, res) => {
   console.log("entre en la ruta para insertar productos");
-  
+
   try {
     // Extraer los datos del producto del cuerpo de la solicitud
     const data = req.body;
-    
+
     // Verificar si se ha subido una imagen y obtener su URL de Cloudinary si es así
     let image = null;
     if (req.file) {
       image = req.file.path; // Obtener la URL de la imagen subida a Cloudinary
     }
-    
+
     // Agregar la URL de la imagen a los datos del producto
     data.imagen = image;
-    
+
     // Conectar a la base de datos MongoDB Atlas
     const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
     console.log("Conexión exitosa a MongoDB Atlas");
@@ -595,13 +665,13 @@ app.get('/productos/:tipo', async (req, res) => {
 app.put('/productosedit/:id', upload.single('imagen'), async (req, res) => {
   const productId = req.params.id;
   const productData = req.body; // Obtener los datos del producto a editar desde el cuerpo de la solicitud
-  
+
   try {
     // Verificar si se ha subido una nueva imagen
     if (req.file) {
       // Obtener la URL de la nueva imagen subida a Cloudinary y asignarla a productData
       productData.imagen = req.file.path;
-      
+
       // Conectar a la base de datos MongoDB Atlas
       const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
       console.log("Conexión exitosa a MongoDB Atlas");
