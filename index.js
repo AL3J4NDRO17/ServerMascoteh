@@ -1362,11 +1362,7 @@ app.post('/InsertarContacto', async (req, res) => {
       user,
       email,
       comentario,
-      direccion: {
-        calle: direccion.calle,
-        ciudad: direccion.ciudad,
-        cp: direccion.cp
-      }
+     
     });
     console.log("Datos insertados en la base de datos");
 
