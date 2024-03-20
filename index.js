@@ -3,7 +3,7 @@ const bodyParser = require('body-parser');
 const { MongoClient, ObjectId } = require('mongodb');
 const nodemailer = require("nodemailer");
 const cors = require('cors');
-const mqtt = require('mqtt'); // Importar el módulo MQTT}
+const mqtt = require('mqtt'); 
 const uuid = require('uuid');
 
 
@@ -11,18 +11,18 @@ const uuid = require('uuid');
 const app = express();
 const port = 3000;
 
-// Configurar middleware para analizar el cuerpo de las solicitudes HTTP
+
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
-// Configurar CORS para permitir solicitudes desde cualquier origen
+
 app.use(cors());
 
-// URL de conexión a tu base de datos MongoDB Atlas
+
 const mongoUrl = "mongodb+srv://pixon:Filo1234@cluster0.sw8tbcs.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 
 const mqttClient = mqtt.connect('mqtt://broker.emqx.io');
-// Ruta para recibir datos desde la ESP32
+
 
 
 /* Cloudinari */
@@ -60,20 +60,14 @@ const Team = new CloudinaryStorage({
   }
 });
 
-// Configurar Multer para manejar la carga de archivos
 const upload = multer({ storage: storage });
 const uploadTeam = multer({ storage: Team });
-// Ahora puedes utilizar "upload" como middleware en tu ruta de subida de imágenes
-
-// Ejemplo de cómo usarlo en una ruta de Express
-
 
 app.post('/upload-image', upload.single('imagen'), (req, res) => {
   console.log("Imagen subida a Cloudinary con éxito");
   // Devuelve la URL de la imagen subida a Cloudinary
   res.json({ mensaje: 'Imagen subida a Cloudinary con éxito', url: req.file.path });
 });
-
 
 /*
 
@@ -391,6 +385,7 @@ app.get('/usuarios', async (req, res) => {
 });
 app.get('/getUserById/:id', async (req, res) => {
   console.log("Entre para revisar usuarios");
+  console.log(req.params.id);
   try {
     // Conectar a la base de datos MongoDB Atlas
     const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
@@ -415,6 +410,7 @@ app.get('/getUserById/:id', async (req, res) => {
 
     // Responder con el resultado de la consulta
     if (usuario) {
+      console.log(usuario);
       res.json(usuario);
     } else {
       res.status(404).send("Usuario no encontrado");
@@ -848,12 +844,37 @@ app.put('/productosedit/:id', upload.single('imagen'), async (req, res) => {
       // Si no se ha subido una nueva imagen, simplemente actualiza el producto sin eliminar la imagen anterior
       // Esto se puede hacer de manera similar a como lo estás haciendo actualmente
       // No es necesario realizar la eliminación de la imagen anterior en este caso
+
+      // Conectar a la base de datos MongoDB Atlas
+      const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
+      console.log("Conexión exitosa a MongoDB Atlas");
+
+      // Obtener una referencia a la base de datos y la colección
+      const db = client.db("SensorData");
+      const collection = db.collection("Products");
+
+      // Realizar la actualización del producto en la colección
+      const result = await collection.updateOne({ _id: new ObjectId(productId) }, { $set: productData });
+
+      // Verificar si se actualizó el producto correctamente
+      if (result.modifiedCount === 1) {
+        console.log("Producto actualizado correctamente.");
+        res.status(200).send("Producto actualizado correctamente.");
+      } else {
+        console.log("El producto no pudo ser encontrado o actualizado.");
+        res.status(404).send("El producto no pudo ser encontrado o actualizado.");
+      }
+
+      // Cerrar la conexión
+      client.close();
+      console.log("Conexión cerrada");
     }
   } catch (error) {
     console.error("Error al conectar a MongoDB Atlas:", error);
     res.status(500).send("Error al conectar a la base de datos");
   }
 });
+
 // Eliminar un producto
 app.delete('/productos/:id', async (req, res) => {
   const productId = req.params.id; // Obtener el ID del usuario a eliminar desde los parámetros de la solicitud
