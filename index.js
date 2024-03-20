@@ -1362,7 +1362,6 @@ app.post('/InsertarContacto', async (req, res) => {
       user,
       email,
       comentario,
-     
     });
     console.log("Datos insertados en la base de datos");
 
