@@ -3,7 +3,7 @@ const bodyParser = require('body-parser');
 const { MongoClient, ObjectId } = require('mongodb');
 const nodemailer = require("nodemailer");
 const cors = require('cors');
-const mqtt = require('mqtt'); 
+const mqtt = require('mqtt');
 const uuid = require('uuid');
 
 
@@ -223,13 +223,15 @@ app.post('/InsertHistoric', async (req, res) => {
     const collection = db.collection("DeviceHistoric");
 
     // Obtener la fecha y la hora actuales
-    const fechaActual = new Date();
+    // Obtener la fecha y la hora actuales en la zona horaria deseada
+    const fechaActual = new Date().toLocaleString('es-ES', { timeZone: 'America/New_York' });
 
     // Obtener la fecha en formato AAAA-MM-DD
-    const fecha = fechaActual.toISOString().split('T')[0];
+    const fecha = fechaActual.split(',')[0];
 
     // Obtener la hora en formato HH:MM:SS
-    const hora = fechaActual.toTimeString().split(' ')[0];
+    const hora = fechaActual.split(',')[1].trim();
+
 
     // Determinar el tipo de acción
     let accionRealizada = "";
@@ -644,6 +646,38 @@ app.post('/validateUser', async (req, res) => {
 
     // Verificar si el usuario existe en la colección
     const existingUser = await collection.findOne({ user: username });
+    if (existingUser) {
+      console.log("Usuario Encontrado:", existingUser);
+      // Respondemos con el usuario encontrado
+      res.status(200).json(existingUser);
+      return; // Terminar la ejecución de la función
+    }
+
+    // Si no se encuentra ningún usuario, respondemos con un mensaje indicando que no existe
+    console.log("Usuario no encontrado");
+    res.status(404).send("Usuario no encontrado");
+
+  } catch (error) {
+    console.error("Error al conectar a MongoDB Atlas:", error);
+    res.status(500).send("Error al conectar a la base de datos");
+  }
+});
+app.post('/validateEmail', async (req, res) => {
+  console.log("sientre al email");
+  const { email: email } = req.body;
+  console.log(email);
+
+  try {
+    // Conectar a la base de datos MongoDB Atlas
+    const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
+    console.log("Conexión exitosa a MongoDB Atlas");
+
+    // Obtener una referencia a la base de datos y la colección
+    const db = client.db("SensorData");
+    const collection = db.collection("Users");
+
+    // Verificar si el usuario existe en la colección
+    const existingUser = await collection.findOne({ email: email });
     if (existingUser) {
       console.log("Usuario Encontrado:", existingUser);
       // Respondemos con el usuario encontrado
