@@ -1729,6 +1729,145 @@ app.delete('/deleteComentario/:id', async (req, res) => {
   }
 });
 
+/* 
+  ____                             _              _____                               _            
+ |  _ \ _ __ ___  __ _ _   _ _ __ | |_ __ _ ___  |  ___| __ ___  ___ _   _  ___ _ __ | |_ ___  ___ 
+ | |_) | '__/ _ \/ _` | | | | '_ \| __/ _` / __| | |_ | '__/ _ \/ __| | | |/ _ \ '_ \| __/ _ \/ __|
+ |  __/| | |  __/ (_| | |_| | | | | || (_| \__ \ |  _|| | |  __/ (__| |_| |  __/ | | | ||  __/\__ \
+ |_|   |_|  \___|\__, |\__,_|_| |_|\__\__,_|___/ |_|  |_|  \___|\___|\__,_|\___|_| |_|\__\___||___/
+                 |___/                                                                             
+
+*/
+app.post('/InsertarPregunta', async (req, res) => {
+
+  const data = req.body;
+  console.log(req.body);
+  try {
+    // Conectar a la base de datos MongoDB Atlas
+    const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
+    console.log("Conexión exitosa a MongoDB Atlas");
+
+    // Obtener una referencia a la base de datos y la colección
+    const db = client.db("SensorData");
+    const collection = db.collection("PreguntasFrecuentes");
+
+    // Insertar los datos en la colección
+    await collection.insertOne({
+      ...data
+    });
+    console.log("Datos insertados en la base de datos");
+
+    // Cerrar la conexión
+    client.close();
+    console.log("Conexión cerrada");
+
+    // Responder a la ESP32 con un mensaje de confirmación
+    res.send("Datos recibidos y guardados en la base de datos");
+  } catch (error) {
+    console.error("Error al conectar a MongoDB Atlas:", error);
+    res.status(500).send("Error al conectar a la base de datos");
+  }
+});
+app.get('/getPreguntas', async (req, res) => {
+
+  try {
+    // Conectar a la base de datos MongoDB Atlas
+    const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
+    console.log("Conexión exitosa a MongoDB Atlas");
+
+    // Obtener una referencia a la base de datos y la colección
+    const db = client.db("SensorData");
+    const collection = db.collection("PreguntasFrecuentes");
+
+    // Realizar la consulta a la colección de usuarios
+    const contac = await collection.find({}).toArray();
+
+    // Cerrar la conexión
+    client.close();
+    console.log("Conexión cerrada");
+
+    // Responder con los resultados de la consulta
+    res.json(contac);
+    console.log(contac);
+  } catch (error) {
+    console.error("Error al conectar a MongoDB Atlas:", error);
+    res.status(500).send("Error al conectar a la base de datos");
+  }
+});
+app.put('/PreguntasEdit/:id', async (req, res) => {
+  const contac = req.params.id; // Obtener el ID de los datos a editar desde los parámetros de la solicitud
+  const datos = req.body; // Obtener los datos a editar desde el cuerpo de la solicitud
+  console.log(datos);
+  try {
+    // Conectar a la base de datos MongoDB Atlas
+    const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
+    console.log("Conexión exitosa a MongoDB Atlas");
+
+    // Obtener una referencia a la base de datos y la colección
+    const db = client.db("SensorData");
+    const collection = db.collection("PreguntasFrecuentes");
+
+    // Realizar la actualización de los datos en la colección
+    const result = await collection.updateOne({ _id: new ObjectId(contac) }, { $set: datos });
+
+    // Verificar si se actualizó correctamente
+    if (result.modifiedCount === 1) {
+      console.log("Datos actualizados correctamente.");
+      res.status(200).send("Datos actualizados correctamente.");
+    } else {
+      console.log("Los datos no pudieron ser encontrados o actualizados.");
+      res.status(404).send("Los datos no pudieron ser encontrados o actualizados.");
+    }
+
+    // Cerrar la conexión
+    client.close();
+    console.log("Conexión cerrada");
+  } catch (error) {
+    console.error("Error al conectar a MongoDB Atlas:", error);
+    res.status(500).send("Error al conectar a la base de datos");
+  }
+});
+app.delete('/deletePreguntas/:id', async (req, res) => {
+
+  const coment = req.params.id; // Obtener el ID del usuario a eliminar desde los parámetros de la solicitud
+  console.log(coment);
+  try {
+    // Conectar a la base de datos MongoDB Atlas
+    const client = await MongoClient.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true });
+    console.log("Conexión exitosa a MongoDB Atlas");
+
+    // Obtener una referencia a la base de datos y la colección
+    const db = client.db("SensorData");
+    const collection = db.collection("PreguntasFrecuentes");
+
+    // Realizar la eliminación de la politica en la colección
+    const result = await collection.deleteOne({ _id: new ObjectId(coment) });  // Suponiendo que el ID del usuario sea único
+
+    // Verificar si se eliminó la politica correctamente
+    if (result.deletedCount === 1) {
+      console.log("datos eliminados correctamente.");
+      res.status(200).send("data eliminada correctamente.");
+    } else {
+      console.log("los datos no pudo ser encontrada o eliminada.");
+      res.status(404).send("los datos no pudo ser encontrado o eliminado.");
+    }
+
+    // Cerrar la conexión
+    client.close();
+    console.log("Conexión cerrada");
+  } catch (error) {
+    console.error("Error al conectar a MongoDB Atlas:", error);
+    res.status(500).send("Error al conectar a la base de datos");
+  }
+});
+
+
+
+
+
+
+
+
 // Manejar errores 404 para rutas no encontradas
 app.use((req, res, next) => {
   res.status(404).send("Ruta no encontrada");
